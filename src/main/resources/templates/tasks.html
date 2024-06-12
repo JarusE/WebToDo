@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Tasks</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400&display=swap">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/1.7.1/css/buttons.dataTables.min.css">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            font-weight: 500;
+        }
+        #admin-controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #tasksTable_wrapper {
+            margin: 0 auto;
+            max-width: 1000px;
+        }
+
+        #tasksTable {
+            border: 1px solid #ccc;
+            border-collapse: collapse;
+        }
+
+        #tasksTable th {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: bold;
+            border: 1px solid #252525;
+            background-color: #C4DDFF;
+        }
+
+        #tasksTable td {
+            border: 1px solid #252525;
+            padding: 8px;
+            text-align: center;
+        }
+        #tasksTable td {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 400;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #createTaskForm {
+            display: flex;
+            flex-direction: column;
+        }
+        #createTaskForm label {
+            margin: 5px 0;
+        }
+        #createTaskForm input,
+        #createTaskForm textarea {
+            margin-bottom: 10px;
+            padding: 5px;
+            font-size: 16px;
+        }
+        #createTaskBtn {
+            background-color: #768CAA;;
+            color: white;
+            padding: 10px;
+            border: none;
+            width: 200px;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto 0;
+            text-align: center;
+            font-size: 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        #createTaskBtn:hover {
+            background-color: #B4C1D2;
+        }
+        #showCreateTaskModal {
+            background-color: #768CAA;;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s, transform 0.3s;
+            margin-bottom: 20px;
+        }
+        #showCreateTaskModal:hover {
+            background-color: #B4C1D2;
+        }
+    </style>
+    <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/dataTables.buttons.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.7.1/js/buttons.html5.min.js"></script>
+</head>
+<body>
+<h1>User Tasks</h1>
+<div>
+    <div id="admin-controls" style="display: none;">
+        <label for="userSelect">Select User:</label>
+        <select id="userSelect">
+            <option value="">--Select User--</option>
+        </select>
+    </div>
+</div>
+<div id="tasksTable_wrapper">
+    <table id="tasksTable" class="display">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Task</th>
+            <th>Author</th>
+            <th>Theme</th>
+            <th>Description</th>
+            <th>Creation Date</th>
+            <th>Deadline</th>
+            <th>Completed</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+    </table>
+    <button id="showCreateTaskModal">Create New Task</button>
+</div>
+
+<!-- Modal for Creating New Task -->
+<div id="createTaskModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Create New Task</h2>
+        <form id="createTaskForm">
+            <label for="newTaskName">Task Name:</label>
+            <input type="text" id="newTaskName">
+            <label for="newTaskTheme">Theme:</label>
+            <input type="text" id="newTaskTheme">
+            <label for="newTaskDescription">Description:</label>
+            <textarea id="newTaskDescription"></textarea>
+            <label for="newTaskDeadline">Deadline:</label>
+            <input type="date" id="newTaskDeadline">
+            <button type="button" id="createTaskBtn">Create</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        const userId = [[${userId}]];
+        const userRole = '[[${userRole}]]';
+
+        const columns = [
+            {data: 'id', visible: userRole === 'ADMIN'},
+            {data: 'task', className: 'editable'},
+            {data: 'author', visible: userRole === 'ADMIN'},
+            {data: 'theme', className: 'editable'},
+            {data: 'description', className: 'editable'},
+            {data: 'creationDate'},
+            {data: 'deadline', className: 'editable'},
+            {
+                data: 'completed',
+                className: "center",
+                render: function (data, type, row) {
+                    return '<input type="checkbox" ' + (data ? 'checked' : '') + '>';
+                }
+            },
+            {
+                data: null,
+                className: "center",
+                defaultContent: '<button class="deleteBtn">Delete</button>'
+            }
+        ];
+
+        const table = $('#tasksTable').DataTable({
+            ajax: {
+                url: `/api/tasks/user/${userId}`,
+                dataSrc: ''
+            },
+            searching: false,
+            lengthChange: false,
+            pageLength: 10,
+            columns: columns
+        });
+
+        if (userRole === 'ADMIN') {
+            $('#admin-controls').show();
+            loadUserSelect();
+        }
+
+        function loadUserSelect() {
+            $.ajax({
+                url: '/api/users',
+                type: 'GET',
+                success: function (data) {
+                    data.forEach(function (user) {
+                        $('#userSelect').append(new Option(user.username, user.id));
+                    });
+                }
+            });
+
+            $('#userSelect').on('change', function () {
+                const selectedUserId = $(this).val();
+                if (selectedUserId) {
+                    table.ajax.url(`/api/tasks/user/${selectedUserId}`).load();
+                }
+            });
+        }
+
+        $('#showCreateTaskModal').on('click', function () {
+            $('#createTaskModal').show();
+        });
+
+        $('.close').on('click', function () {
+            $('#createTaskModal').hide();
+        });
+
+        $('#createTaskBtn').on('click', function () {
+            const taskData = {
+                task: $('#newTaskName').val(),
+                theme: $('#newTaskTheme').val(),
+                description: $('#newTaskDescription').val(),
+                deadline: $('#newTaskDeadline').val(),
+                completed: false
+            };
+            createTask(taskData);
+            $('#createTaskModal').hide();
+        });
+
+        function createTask(taskData) {
+            const selectedUserId = userRole === 'ADMIN' ? $('#userSelect').val() : userId;
+            $.ajax({
+                url: `/api/tasks/user/${selectedUserId}`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(taskData),
+                success: function (result) {
+                    if (result.success) {
+                        table.ajax.reload(null, false);
+                    } else {
+                        console.error("Failed to create task.");
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Failed to create task:", error);
+                }
+            });
+        }
+
+        $('#tasksTable').on('dblclick', 'td.editable', function () {
+            const cell = table.cell(this);
+            const originalContent = cell.data();
+            $(this).html('<input type="text" value="' + originalContent + '"/>');
+            $('input', this).focus();
+
+            $('input', this).on('blur', function () {
+                const newValue = $(this).val();
+                if (newValue !== originalContent) {
+                    cell.data(newValue).draw();
+                    updateTaskCell(cell.index().row, cell.index().column, newValue);
+                } else {
+                    cell.data(originalContent).draw();
+                }
+            });
+
+            $('input', this).on('keypress', function (e) {
+                if (e.which === 13) {
+                    const newValue = $(this).val();
+                    if (newValue !== originalContent) {
+                        cell.data(newValue).draw();
+                        updateTaskCell(cell.index().row, cell.index().column, newValue);
+                    } else {
+                        cell.data(originalContent).draw();
+                    }
+                }
+            });
+        });
+
+        function updateTaskCell(rowIndex, colIndex, newValue) {
+            const data = table.row(rowIndex).data();
+            const taskId = data.id;
+            const taskData = {
+                id: taskId,
+                task: colIndex === 1 ? newValue : data.task,
+                theme: colIndex === 3 ? newValue : data.theme,
+                description: colIndex === 4 ? newValue : data.description,
+                deadline: colIndex === 6 ? newValue : data.deadline,
+                completed: data.completed
+            };
+            updateTask(taskData);
+        }
+
+        $('#tasksTable tbody').on('change', 'input[type="checkbox"]', function () {
+            const data = table.row($(this).parents('tr')).data();
+            const taskId = data.id;
+            const taskData = {
+                id: taskId,
+                task: data.task,
+                theme: data.theme,
+                description: data.description,
+                deadline: data.deadline,
+                completed: this.checked
+            };
+            updateTask(taskData);
+        });
+
+        function updateTask(taskData) {
+            const selectedUserId = userRole === 'ADMIN' ? $('#userSelect').val() : userId;
+            $.ajax({
+                url: `/api/tasks/user/${selectedUserId}/${taskData.id}`,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify(taskData),
+                success: function (result) {
+                    if (result.success) {
+                        table.ajax.reload(null, false);
+                    } else {
+                        console.error("Failed to update task.");
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Failed to update task:", error);
+                }
+            });
+        }
+
+        $('#tasksTable tbody').on('click', 'button.deleteBtn', function () {
+            const row = table.row($(this).parents('tr'));
+            const data = row.data();
+            const taskId = data.id;
+            deleteTask(taskId, row);
+        });
+
+        function deleteTask(taskId, row) {
+            const selectedUserId = userRole === 'ADMIN' ? $('#userSelect').val() : userId;
+            $.ajax({
+                url: `/api/tasks/user/${selectedUserId}/${taskId}`,
+                type: 'DELETE',
+                success: function (result) {
+                    if (result.success) {
+                        row.remove().draw();
+                    } else {
+                        console.error("Failed to delete task.");
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Failed to delete task:", error);
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>
