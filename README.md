@@ -7,5 +7,3 @@
 2. Складання проекту: Maven
 3. Backend: Spring Boot (Web, Data JPA)
 4. БД: MySQL
-
-Виконав Сєргєєв Вадим 6-1212.1
