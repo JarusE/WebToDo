@@ -11,7 +11,7 @@ public class Task {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Поле задачи не может быть пустым")
+    @NotBlank(message = "The task field cannot be empty")
     private String task;
     private Long author;
     private String Theme;
@@ -31,42 +31,49 @@ public class Task {
     public void setId(Long id) {
         this.id = id;
     }
+
     public String getTask() {
         return task;
     }
     public void setTask(String task) {
         this.task = task;
     }
+
     public LocalDate getCreationDate() {
         return CreationDate;
     }
     public void setCreationDate(LocalDate creationDate) {
         this.CreationDate = creationDate;
     }
+
     public Long getAuthor() {
         return author;
     }
     public void setAuthor(Long author) {
         this.author = author;
     }
+
     public String getTheme() {
         return Theme;
     }
     public void setTheme(String theme) {
         this.Theme = theme;
     }
+
     public String getDescription() {
         return Description;
     }
     public void setDescription(String description) {
         this.Description = description;
     }
+
     public LocalDate getDeadline() {
         return Deadline;
     }
     public void setDeadline(LocalDate deadline) {
         this.Deadline = deadline;
     }
+
     public boolean isCompleted() {
         return completed;
     }

@@ -34,7 +34,8 @@
             font-weight: bold;
         }
         input[type="text"],
-        input[type="password"] {
+        input[type="password"],
+        input[type="email"] {
             width: 100%;
             padding: 10px;
             margin-top: 6px;
@@ -42,6 +43,11 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             box-sizing: border-box;
+        }
+        .error-message {
+            color: red;
+            font-size: 12px;
+            display: none;
         }
         button[type="submit"] {
             width: 100%;
@@ -72,18 +78,23 @@
     <h1>Register</h1>
     <form id="registrationForm">
         <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required><br><br>
+        <input type="text" id="username" name="username" required>
+        <span class="error-message" id="usernameError"></span><br><br>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+        <span class="error-message" id="emailError"></span><br><br>
         <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br><br>
+        <input type="password" id="password" name="password" required>
+        <span class="error-message" id="passwordError"></span><br><br>
         <label for="confirmPassword">Confirm Password:</label>
-        <input type="password" id="confirmPassword" name="confirmPassword" required><br><br>
+        <input type="password" id="confirmPassword" name="confirmPassword" required>
+        <span class="error-message" id="confirmPasswordError"></span><br><br>
         <button type="submit">Register</button>
     </form>
     <div>
         <a href="/login">Login</a>
     </div>
 </div>
-
 <script>
     $(document).ready(function() {
         $("#registrationForm").on("submit", function(event) {
@@ -92,64 +103,76 @@
             var username = $("#username").val();
             var password = $("#password").val();
             var confirmPassword = $("#confirmPassword").val();
+            var email = $("#email").val();
 
-            // Password validation
-            if (password.length < 8) {
-                alert("Password must be at least 8 characters long.");
-                return;
-            }
-            if (!/[A-Z]/.test(password)) {
-                alert("Password must contain at least one uppercase letter.");
-                return;
-            }
-            if (!/[a-z]/.test(password)) {
-                alert("Password must contain at least one lowercase letter.");
-                return;
-            }
-            if (!/[0-9]/.test(password)) {
-                alert("Password must contain at least one number.");
-                return;
-            }
-            if (!/[!@#\$%\^&\*]/.test(password)) {
-                alert("Password must contain at least one special character (!@#$%^&*).");
-                return;
+            var passwordError = validatePassword(password);
+            var hasError = false;
+
+            if (passwordError) {
+                $("#passwordError").text(passwordError).show();
+                hasError = true;
+            } else {
+                $("#passwordError").text("").hide();
             }
 
-            // Confirm password validation
             if (password !== confirmPassword) {
-                alert("Passwords do not match.");
-                return;
+                $("#confirmPasswordError").text("Passwords do not match!").show();
+                hasError = true;
+            } else {
+                $("#confirmPasswordError").text("").hide();
             }
 
-            var user = {
-                username: username,
-                password: password
-            };
+            if (!hasError) {
+                var user = {
+                    username: username,
+                    password: password,
+                    confirmPassword: confirmPassword,
+                    email: email
+                };
 
-            console.log("Sending user data:", user);
+                console.log("Sending user data:", user);
 
-            $.ajax({
-                url: "/api/register",
-                type: "POST",
-                contentType: "application/json",
-                data: JSON.stringify(user),
-                success: function(response) {
-                    console.log("Response from server:", response);
-                    if (response === "success") {
-                        window.location.href = "/login";
-                    } else if (response === "username") {
-                        alert("Username already exists!");
-                    } else if (response === "password") {
-                        alert("Password cannot be empty!");
+                $.ajax({
+                    url: "/api/register",
+                    type: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(user),
+                    success: function(response) {
+                        console.log("Server response:", response);
+                        if (response === "success") {
+                            window.location.href = "/login";
+                        } else if (response === "username") {
+                            $("#usernameError").text("Username already exists!").show();
+                        } else if (response === "password_mismatch") {
+                            $("#confirmPasswordError").text("Passwords do not match!").show();
+                        }
+                    },
+                    error: function(jqXHR) {
+                        console.log("Error response:", jqXHR);
+                        if (jqXHR.status === 400) {
+                            var errors = JSON.parse(jqXHR.responseText);
+                            if (errors.error === "Username already exists") {
+                                $("#usernameError").text("Username already exists!").show();
+                            } else if (errors.error === "password_mismatch") {
+                                $("#confirmPasswordError").text("Passwords do not match!").show();
+                            }
+                        } else {
+                            alert("An error occurred. Please try again.");
+                        }
                     }
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    console.error("Error occurred:", textStatus, errorThrown);
-                    alert("An error occurred. Please try again.");
-                }
-            });
+                });
+            }
         });
+
+        function validatePassword(password) {
+            var regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\W).{8,}$/;
+            if (!regex.test(password)) {
+                return "Password must be at least 8 characters long, contain an uppercase letter, a lowercase letter, and a special character.";
+            }
+            return null;
+        }
     });
 </script>
+
 </body>
 </html>

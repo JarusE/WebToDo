@@ -12,13 +12,17 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull(message = "Имя пользователя не может быть пустым")
+    @NotNull(message = "Username cannot be empty")
     private String username;
 
-    @NotNull(message = "Пареоль не может быть пустым")
+    @NotNull(message = "Password cannot be empty")
     private String password;
-    private String role;
 
+    @NotEmpty(message = "Email cannot be empty")
+    @Email(message = "Invalid email format")
+    private String email;
+
+    private String role;
 
     public Long getId() {
         return id;
@@ -50,5 +54,13 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getEmail(){
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }
